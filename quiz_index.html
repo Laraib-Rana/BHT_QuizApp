@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light" id="quiz-html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Assessment Quiz System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { transition: background-color 0.3s, color 0.3s; }
+        .option-card { cursor: pointer; transition: background-color 0.2s, transform 0.1s; }
+        .option-card:hover { transform: scale(1.01); }
+        .hidden { display: none !important; }
+        [data-bs-theme="dark"] body { background-color: #12141c !important; }
+        [data-bs-theme="dark"] .card { background-color: #1a1d29; border-color: #2d3248; }
+    </style>
+</head>
+<body class="bg-light text-dark">
+
+    <nav class="navbar navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-info" href="#">🧠 QuizMaster Pro</a>
+            <button id="theme-toggle" class="btn btn-outline-light btn-sm">🌙 Dark Mode</button>
+        </div>
+    </nav>
+
+    <div class="container py-5" style="max-width: 800px;">
+        
+        <div id="setup-screen" class="card shadow border-0 p-4">
+            <h2 class="fw-bold mb-3 text-center">Test Your Engineering Skills</h2>
+            <p class="text-muted text-center mb-4">Select your parameters below to initialize the randomized assessment.</p>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small">Choose Tech Track</label>
+                    <select id="quiz-category" class="form-select form-select-lg">
+                        <option value="all">All Combined Categories</option>
+                        <option value="Frontend">Frontend (HTML/CSS/JS)</option>
+                        <option value="Backend">Backend & Databases</option>
+                        <option value="Software Systems">Software Engineering & OS</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold small">Select Difficulty Level (Bonus Feature)</label>
+                    <select id="quiz-difficulty" class="form-select form-select-lg">
+                        <option value="all">Any Difficulty</option>
+                        <option value="Easy">🟢 Easy</option>
+                        <option value="Medium" selected>🟡 Medium</option>
+                        <option value="Hard">🔴 Hard</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm" onclick="startQuiz()">Generate & Start Quiz</button>
+        </div>
+
+        <div id="quiz-screen" class="card shadow border-0 p-4 hidden">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="badge bg-secondary-subtle text-secondary px-3 py-2" id="info-meta">Category: Frontend</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small fw-semibold text-muted">Time Remaining:</span>
+                    <span class="badge bg-danger fs-6 px-3 py-2" id="quiz-timer">00:30</span>
+                </div>
+            </div>
+
+            <div class="progress mb-4" style="height: 10px;">
+                <div id="quiz-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" style="width: 0%"></div>
+            </div>
+
+            <div class="mb-4">
+                <span class="text-muted small fw-bold d-block mb-1" id="question-number-tracker">QUESTION 1 OF 10</span>
+                <h4 class="fw-bold card-title" id="question-text">Loading question context string...</h4>
+            </div>
+
+            <div class="d-flex flex-column gap-2 mb-4" id="options-container">
+                </div>
+
+            <div class="d-flex justify-content-end">
+                <button id="next-btn" class="btn btn-dark px-4 py-2 fw-bold" onclick="handleNextQuestion()" disabled>Next Question ➡️</button>
+            </div>
+        </div>
+
+        <div id="result-screen" class="card shadow border-0 p-4 hidden">
+            <h2 class="fw-bold text-center mb-2">Assessment Completed!</h2>
+            <p class="text-muted text-center mb-4">Your answers have been compiled against the master response indices.</p>
+
+            <div class="row g-3 mb-5 text-center">
+                <div class="col-6 col-md-3">
+                    <div class="bg-body-secondary p-3 rounded">
+                        <small class="text-muted d-block mb-1">Final Score</small>
+                        <h3 class="fw-bold mb-0 text-primary" id="res-score">0/0</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="bg-body-secondary p-3 rounded">
+                        <small class="text-muted d-block mb-1">Accuracy</small>
+                        <h3 class="fw-bold mb-0 text-success" id="res-accuracy">0%</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="bg-body-secondary p-3 rounded">
+                        <small class="text-muted d-block mb-1">Time Expended</small>
+                        <h3 class="fw-bold mb-0 text-warning" id="res-time">0s</h3>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="bg-body-secondary p-3 rounded">
+                        <small class="text-muted d-block mb-1">Verdict</small>
+                        <h3 class="fw-bold mb-0 text-dark" id="res-verdict">N/A</h3>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs mb-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold" data-bs-toggle="tab" data-bs-target="#tab-analysis" type="button">📊 Answer Analysis</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold" data-bs-toggle="tab" data-bs-target="#tab-leaderboard" type="button">🏆 Global Leaderboard</button>
+                </li>
+            </ul>
+
+            <div class="tab-content mb-4">
+                <div class="tab-pane fade show active" id="tab-analysis">
+                    <div id="analysis-container" class="d-flex flex-column gap-3 max-height-overflow" style="max-height: 400px; overflow-y: auto;">
+                        </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-leaderboard">
+                    <div class="p-2">
+                        <div class="input-group mb-3" id="leaderboard-save-form">
+                            <input type="text" id="player-name" class="form-control" placeholder="Enter your name to save score...">
+                            <button class="btn btn-success fw-bold" onclick="saveLeaderboardScore()">Save Score</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle text-center mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Name</th>
+                                        <th>Track</th>
+                                        <th>Score</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaderboard-tbody">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-outline-primary w-100 fw-bold py-2 mt-2" onclick="restartQuizSetup()">🔄 Try Another Configuration</button>
+        </div>
+
+    </div>
+
+    <script src="quiz_app.js"></script>
+</body>
+</html>
